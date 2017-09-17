@@ -22,5 +22,11 @@ pretty_hist(sample, [-5 5]);
 
 `sample = lipsample(@f, L, [a b], m, 'Tolerance', epsilon);` ... If _epsilon_ = 0, exact samples are drawn for all sample sizes. Otherwise, for large _m_, samples are drawn from a piecewise linear approximation of _f_ at distance less than _epsilon_ in the supremum norm.
 
+`sample = lipsample(@f, L, [a b], m, 'Upperbound', M);` ... Uses the fact that _f_ is bounded above by _M_ to improve efficiency.
+
 ## Notes
 The density function _f_ does not have to be normalized, but it should be scaled to be near 1 as to improve efficiency. _L_ is the Lipschitz constant of _f_, not of its renormalization.
+
+Below you can see the envelope that was automatically constructed for the acceptance-rejection sampling of a triangular density.
+
+![](triangular-with-envelope.png)
