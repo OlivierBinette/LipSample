@@ -1,4 +1,4 @@
-# Sampling Lipschitz continuous densities
+# LipSample
 MATLAB code to sample arbitrary Lipschitz continuous densities on the interval.
 
 ## Example
