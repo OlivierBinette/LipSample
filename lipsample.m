@@ -1,7 +1,7 @@
-function sample = lipsample(f, L, limits, m, varargin)
+function [sample, x, y] = lipsample(f, L, limits, m, varargin)
 % Samples from a Lipschitz continuous probability density function on [a,b].
 %
-%   s = lipsample(f, L, [a b], m)
+%   s = lipsample(@f, L, [a b], m)
 %       Draws _m_ samples from the probability distribution _f_ on [_a_, _b_] 
 %       which is Lipchitz continuous of order _L_. If _f_ is continuously 
 %       differentiable, then the best choice of _L_ is the maximum value 
@@ -53,29 +53,32 @@ function sample = lipsample(f, L, limits, m, varargin)
 %
 %     - Efficiency bottleneck is the evaluation of _f_ at O(m) points. 
 %
-%   O.B. sept. 15 2017
+%   CC-BY O.B. sept. 15 2017
 
     % Parsing input arguments.
     a = limits(1);
     b = limits(2);
     
     p = inputParser;
-    defaultN = floor(2*L*(b-a)) + 1;
-    defaultTolerance = 0.001;
-    addOptional(p, 'N', defaultN);
-    addOptional(p, 'Tolerance', defaultTolerance);
+    addOptional(p, 'N', floor(4*L*(b-a)) + 1);
+    addOptional(p, 'Tolerance', 0.001);
+    addOptional(p, 'Upperbound', -1)
     parse(p, varargin{:});
     
     n = p.Results.N;
     tolerance = p.Results.Tolerance;
+    upperbound = p.Results.Upperbound;
     
     % Constructing the spline envelope.
-    s = (b-a) * L / n;
+    s = (b-a) * L / (2*n);
     x = linspace(0,1,n+1);
     y = arrayfun(f, x*(b-a) + a) + s;
-
+    if upperbound > 0
+        y(y > upperbound) = upperbound;
+    end
+    
     % Sampling from the envelope.
-    nProp = ceil((1+s)*m);
+    nProp = ceil((2+s)*m);
     U1 = rand(1, nProp);
     U2 = rand(1, nProp);
 
@@ -90,7 +93,7 @@ function sample = lipsample(f, L, limits, m, varargin)
     U(U > 1) = 2 - U(U > 1); % The sample.
     
     % Evaluating f at the points U*(b-a)+a
-    if (tolerance > 0) & (m > (b-a) * L / tolerance) % Approximation when m is large
+    if (tolerance > 0) && (m > (b-a) * L / tolerance) % Approximation when m is large
         nDiscretize = ceil((b-a) * L / tolerance)+2;
         fx = linspace(a, b, nDiscretize);
         fy = arrayfun(f, fx);
