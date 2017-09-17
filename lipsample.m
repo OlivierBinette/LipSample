@@ -1,4 +1,4 @@
-function [sample, x, y] = lipsample(f, L, limits, m, varargin)
+function sample = lipsample(f, L, limits, m, varargin)
 % Samples from a Lipschitz continuous probability density function on [a,b].
 %
 %   s = lipsample(@f, L, [a b], m)
@@ -6,6 +6,10 @@ function [sample, x, y] = lipsample(f, L, limits, m, varargin)
 %       which is Lipchitz continuous of order _L_. If _f_ is continuously 
 %       differentiable, then the best choice of _L_ is the maximum value 
 %       of its derivative.
+%
+%   s = lipsample(..., m, 'Upperbound', M)
+%       ... Uses the fact that _f_ is bounded above by _M_ to improve
+%       efficiency.
 %
 %   s = lipsample(..., 'N', n)
 %       ... Uses _n_ mixtures components in the spline envelope of _f_. 
@@ -78,7 +82,7 @@ function [sample, x, y] = lipsample(f, L, limits, m, varargin)
     end
     
     % Sampling from the envelope.
-    nProp = ceil((2+s)*m);
+    nProp = ceil((1.5+s)*m);
     U1 = rand(1, nProp);
     U2 = rand(1, nProp);
 
