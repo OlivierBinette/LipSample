@@ -23,3 +23,6 @@ pretty_hist(sample, [-5 5]);
 `sample = lipsample(@f, L, [a b], m);` Draws _m_ samples from the probability density function _f_ which is Lipschitz continuous of order _L_ on _[a,b]_. For _m_ larger than 1000 * (b-a) * L, samples are drawn from a piecewise linear approximation of _f_ at distance at most 0.001 in the supremum norm. Exact samples or different error tolerances can be obtained by using the 'Tolerance' key.
 
 `sample = lipsample(@f, L, [a b], m, 'Tolerance', epsilon);` ... If _epsilon_ = 0, exact samples are drawn for all sample sizes. Otherwise, for large _m_, samples are drawn from a piecewise linear approximation of _f_ at distance less than _epsilon_ in the supremum norm.
+
+## Notes
+The density function _f_ should be normalized. It would be straightforward to adapt the method to unnormalized densities, but that would require the user to also specify the number of components to be used for the mixture envelope of _f_. 
