@@ -7,10 +7,6 @@ function [sample, x, y] = lipsample(f, L, limits, m, varargin)
 %       differentiable, then the best choice of _L_ is the maximum value 
 %       of its derivative.
 %
-%   s = lipsample(..., m, 'Upperbound', M)
-%       ... Uses the fact that _f_ is bounded above by _M_ to improve
-%       efficiency.
-%
 %   s = lipsample(..., 'N', n)
 %       ... Uses _n_ mixtures components in the spline envelope of _f_. 
 %       The default choice is n = ceil(2*_L_), although increasing _n_ may
