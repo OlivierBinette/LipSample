@@ -1,4 +1,4 @@
-function sample = lipsample(f, L, limits, m, varargin)
+function [sample, x, y] = lipsample(f, L, limits, m, varargin)
 % Samples from a Lipschitz continuous probability density function on [a,b].
 %
 %   s = lipsample(@f, L, [a b], m)
@@ -64,22 +64,17 @@ function sample = lipsample(f, L, limits, m, varargin)
     b = limits(2);
     
     p = inputParser;
-    addOptional(p, 'N', floor(4*L*(b-a)) + 1);
+    addOptional(p, 'N', floor(6*L*(b-a)) + 1);
     addOptional(p, 'Tolerance', 0.001);
-    addOptional(p, 'Upperbound', -1)
     parse(p, varargin{:});
     
     n = p.Results.N;
     tolerance = p.Results.Tolerance;
-    upperbound = p.Results.Upperbound;
     
     % Constructing the spline envelope.
     s = (b-a) * L / (2*n);
     x = linspace(0,1,n+1);
     y = arrayfun(f, x*(b-a) + a) + s;
-    if upperbound > 0
-        y(y > upperbound) = upperbound;
-    end
     
     % Sampling from the envelope.
     nProp = ceil((1.5+s)*m);
