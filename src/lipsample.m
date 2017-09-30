@@ -2,7 +2,7 @@ function [sample, x, y] = lipsample(f, L, limits, m, varargin)
 % Random variates from a Lipschitz continuous probability density function on [a,b].
 %
 %   s = lipsample(@f, L, [a b], m)
-%       Draws _m_ samples from the probability density _f_ on [_a_, _b_] 
+%       Draws a sample of size _m_ from the probability density _f_ on [_a_, _b_] 
 %       which is Lipchitz continuous of order _L_. If _f_ is continuously 
 %       differentiable, then the best choice of _L_ is the maximum value 
 %       of its derivative.
@@ -36,7 +36,7 @@ function [sample, x, y] = lipsample(f, L, limits, m, varargin)
 %   % A few exact samples
 %       sample = lipsample(@myfunc, 2*pi, [0 1], 10000);
 %
-%   % Plot 10 million samples based on a low tolerance approximation of _f_.
+%   % Plot a sample of size 10 million based on a low tolerance approximation of _f_.
 %       sample = lipsample(@myfunc, 2*pi, [0 1], 10000000, 'Tolerance', 0.0001);
 %       hold on
 %       pretty_hist(sample, [0 1]);
