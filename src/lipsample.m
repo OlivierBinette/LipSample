@@ -1,8 +1,8 @@
 function [sample, x, y] = lipsample(f, L, limits, m, varargin)
-% Samples from a Lipschitz continuous probability density function on [a,b].
+% Random variates from a Lipschitz continuous probability density function on [a,b].
 %
 %   s = lipsample(@f, L, [a b], m)
-%       Draws _m_ samples from the probability distribution _f_ on [_a_, _b_] 
+%       Draws _m_ samples from the probability density _f_ on [_a_, _b_] 
 %       which is Lipchitz continuous of order _L_. If _f_ is continuously 
 %       differentiable, then the best choice of _L_ is the maximum value 
 %       of its derivative.
@@ -15,9 +15,12 @@ function [sample, x, y] = lipsample(f, L, limits, m, varargin)
 %   s = lipsample(..., m, 'Tolerance', epsilon)
 %       ... When _m_ is large, samples follow an approximation of _f_
 %       that is at distance at most epsilon in the supremum norm. By
-%       default, epsilon = 0.001. If epsilon = 0, exact samples are drawn
+%       default, epsilon = 0.0005. If epsilon = 0, exact samples are drawn
 %       for all values of m.
 %       
+%   [s, x, y] = lipsample(@f, L, [a b], m)
+%       ... Returns the spline envelope constructed by the algorithm: the
+%       envelope linearly interpolates the points (x,y).
 %
 %   Dependencies
 %   ------------
@@ -40,6 +43,16 @@ function [sample, x, y] = lipsample(f, L, limits, m, varargin)
 %       plot(linspace(0,1), myfunc(linspace(0,1)));
 %       hold off
 %
+%   % Plot the envelope constructed by the algorithm
+%       [sample, x, y] = lipsample(@myfunc, 4*pi, [0 1], 10000);
+%       u = linspace(0, 1, 200);
+%       hold on
+%       pretty_hist(sample, [0 1]);
+%       plot(u, myfunc(u));
+%       plot(u, interp1(x,y,u));
+%       hold off
+%       
+%
 %   Implementation details
 %   ----------------------
 %     - Acceptance-rejection sampling. A first degree spline envelope of _f_
@@ -55,25 +68,36 @@ function [sample, x, y] = lipsample(f, L, limits, m, varargin)
 %
 %   CC-BY O.B. sept. 15 2017
 
-    % Parsing input arguments.
+    % Parse input arguments.
     a = limits(1);
     b = limits(2);
-    
+
     p = inputParser;
-    addOptional(p, 'N', floor(6*L*(b-a)) + 1);
-    addOptional(p, 'Tolerance', 0.001);
+    addOptional(p, 'Tolerance', 0.0005);
+    addOptional(p, 'N', ceil(50*sqrt(L)) + 1);
+    
     parse(p, varargin{:});
-    
-    n = p.Results.N;
     tolerance = p.Results.Tolerance;
-    
-    % Constructing the spline envelope.
+    n = p.Results.N;
+        
+    % Construct the spline envelope.
     s = (b-a) * L / (2*n);
     x = linspace(0,1,n+1);
-    y = arrayfun(f, x*(b-a) + a) + s;
+    y = arrayfun(f, x*(b-a) + a);
     
-    % Sampling from the envelope.
-    nProp = ceil((1.5+s)*m);
+    % Use the Lipschitz constant to locally adjust the spline.
+    M = abs(atan(n*diff(y)/(b-a)));
+    r = sqrt(((b-a)/n)^2 + diff(y).^2);
+    alpha = atan(L);
+    h = ((b-a)*tan(alpha)/n - r.*sin(M))/2;
+    y(1) = y(1) + h(1);
+    y(n+1) = y(n+1) + h(n);
+    for i = 2:n
+        y(i) = y(i) + max(h(i-1), h(i));
+    end
+            
+    % Generate random variates following the envelope.
+    nProp = ceil((1+s)*m);
     U1 = rand(1, nProp);
     U2 = rand(1, nProp);
 
@@ -83,13 +107,12 @@ function [sample, x, y] = lipsample(f, L, limits, m, varargin)
     y(1) = 2*y(1);
     y(end) = 2*y(end);
 
-    U = (U1 + U2 + I - 2)/n;
-    U(U < 0) = -U(U < 0);
+    U = abs((U1 + U2 + I - 2)/n);
     U(U > 1) = 2 - U(U > 1); % The sample.
     
-    % Evaluating f at the points U*(b-a)+a
-    if (tolerance > 0) && (m > (b-a) * L / tolerance) % Approximation when m is large
-        nDiscretize = ceil((b-a) * L / tolerance)+2;
+    % Evaluate f at the points U*(b-a)+a
+    if (tolerance > 0) && (m > 0.5*(b-a) * L / tolerance) % Optional approximation when m is large
+        nDiscretize = ceil(0.5 * (b-a) * L / tolerance)+2;
         fx = linspace(a, b, nDiscretize);
         fy = arrayfun(f, fx);
         B = interp1(fx, fy, U*(b-a) + a);
@@ -97,7 +120,7 @@ function [sample, x, y] = lipsample(f, L, limits, m, varargin)
         B = arrayfun(f,U*(b-a) + a);
     end
     
-    % Sampling f
+    % Generate from  f
     V = rand(1, nProp);
     sample = U(lt(V .* interp1(x,y,U), B))*(b-a)+a;
     
@@ -106,4 +129,6 @@ function [sample, x, y] = lipsample(f, L, limits, m, varargin)
     else
         sample = sample(1:m);
     end
+    
+    x = x *(b-a) + a;
 end
