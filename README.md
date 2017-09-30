@@ -25,6 +25,6 @@ pretty_hist(sample, [-5 5]);
 ## Notes
 The function _f_ does not have to be a normalized density, but it should be scaled to be near 1 as to improve efficiency. _L_ is the Lipschitz constant of _f_, not of its renormalization.
 
-Below you can see the envelope that was automatically constructed for the acceptance-rejection sampling of a triangular density (`lipsample(@triangular, 4, [0 1], 1000000);`).
+Below you can see the envelope that was automatically constructed for the acceptance-rejection sampling of a triangular density (`lipsample(@triangular, 4, [0 1], 1000000, 'N', 9);`).
 
 ![](triangular-with-envelope.png)
