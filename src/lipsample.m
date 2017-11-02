@@ -68,7 +68,7 @@ function [sample, x, y] = lipsample(f, L, limits, m, varargin)
     b = limits(2);
 
     p = inputParser;
-    addOptional(p, 'N', ceil(50*sqrt(L)) + 1);
+    addOptional(p, 'N', ceil(200*L) + 200);
     
     parse(p, varargin{:});
     n = p.Results.N;
@@ -84,7 +84,7 @@ function [sample, x, y] = lipsample(f, L, limits, m, varargin)
     d = diff(y);
     beta = abs(atan(n*d/(b-a)));
     r = 0.5*sqrt(((b-a)/n )^2 + d.^2).*sin(pi-alpha-beta)./sin(alpha);
-    h = (r.*(L - abs(n*d/(b-a))));
+    h = r.*(L - abs(n*d/(b-a)));
     y(1) = y(1) + h(1); ylow(1) = ylow(1) - h(1);
     y(n+1) = y(n+1) + h(n); ylow(n+1) = ylow(n+1) - h(n);
     for i = 2:n
@@ -113,7 +113,7 @@ function [sample, x, y] = lipsample(f, L, limits, m, varargin)
     sample1 = U(passlow);
     U = U(~passlow); V = V(~passlow);
     sample2 = U(lt(V.*interp1(x,y,U), arrayfun(f, U*(b-a)+a)));
-    sample = cat(2, sample1, sample2);
+    sample = (b-a)*cat(2, sample1, sample2) + a;
     
     if numel(sample) < m
         sample = cat(2, sample, lipsample(f, L, [a b], m - numel(sample)));
