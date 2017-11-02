@@ -12,11 +12,6 @@ function [sample, x, y] = lipsample(f, L, limits, m, varargin)
 %       The default choice is n = ceil(2*_L_), although increasing _n_ may
 %       improve performance in some cases.
 %
-%   s = lipsample(..., m, 'Tolerance', epsilon)
-%       ... When _m_ is large, samples follow an approximation of _f_
-%       that is at distance at most epsilon in the supremum norm. By
-%       default, epsilon = 0.0005. If epsilon = 0, exact samples are drawn
-%       for all values of m.
 %       
 %   [s, x, y] = lipsample(@f, L, [a b], m)
 %       ... Returns the spline envelope constructed by the algorithm: the
@@ -36,8 +31,8 @@ function [sample, x, y] = lipsample(f, L, limits, m, varargin)
 %   % A few exact samples
 %       sample = lipsample(@myfunc, 2*pi, [0 1], 10000);
 %
-%   % Plot 10 million variates based on a low tolerance approximation of _f_.
-%       sample = lipsample(@myfunc, 2*pi, [0 1], 10000000, 'Tolerance', 0.0001);
+%   % Plot 10 million variates.
+%       sample = lipsample(@myfunc, 2*pi, [0 1], 10000000);
 %       hold on
 %       pretty_hist(sample, [0 1]);
 %       plot(linspace(0,1), myfunc(linspace(0,1)));
@@ -73,28 +68,28 @@ function [sample, x, y] = lipsample(f, L, limits, m, varargin)
     b = limits(2);
 
     p = inputParser;
-    addOptional(p, 'Tolerance', 0.0005);
     addOptional(p, 'N', ceil(50*sqrt(L)) + 1);
     
     parse(p, varargin{:});
-    tolerance = p.Results.Tolerance;
     n = p.Results.N;
         
     % Construct the spline envelope.
     s = (b-a) * L / (2*n);
     x = linspace(0,1,n+1);
     y = arrayfun(f, x*(b-a) + a);
+    ylow = arrayfun(f, x*(b-a) + a);
     
     % Use the Lipschitz constant to locally adjust the spline.
     alpha = atan(L);
     d = diff(y);
     beta = abs(atan(n*d/(b-a)));
     r = 0.5*sqrt(((b-a)/n )^2 + d.^2).*sin(pi-alpha-beta)./sin(alpha);
-    h = abs(r.*(L - abs(n*d/(b-a))));
-    y(1) = y(1) + h(1);
-    y(n+1) = y(n+1) + h(n);
+    h = (r.*(L - abs(n*d/(b-a))));
+    y(1) = y(1) + h(1); ylow(1) = ylow(1) - h(1);
+    y(n+1) = y(n+1) + h(n); ylow(n+1) = ylow(n+1) - h(n);
     for i = 2:n
         y(i) = y(i) + max(h(i-1), h(i));
+        ylow(i) = ylow(i) - max(h(i-1), h(i));
     end
             
     % Generate random variates following the envelope.
@@ -110,20 +105,15 @@ function [sample, x, y] = lipsample(f, L, limits, m, varargin)
 
     U = abs((U1 + U2 + I - 2)/n);
     U(U > 1) = 2 - U(U > 1); % The sample.
-    
-    % Evaluate f at the points U*(b-a)+a
-    if (tolerance > 0) && (m > 0.5*(b-a) * L / tolerance) % Optional approximation when m is large
-        nDiscretize = ceil(0.5 * (b-a) * L / tolerance)+2;
-        fx = linspace(a, b, nDiscretize);
-        fy = arrayfun(f, fx);
-        B = interp1(fx, fy, U*(b-a) + a);
-    else
-        B = arrayfun(f,U*(b-a) + a);
-    end
-    
+
     % Generate from  f
     V = rand(1, nProp);
-    sample = U(lt(V .* interp1(x,y,U), B))*(b-a)+a;
+    B = interp1(x, ylow, U);
+    passlow = lt(V .* interp1(x,y,U), B);
+    sample1 = U(passlow);
+    U = U(~passlow); V = V(~passlow);
+    sample2 = U(lt(V.*interp1(x,y,U), arrayfun(f, U*(b-a)+a)));
+    sample = cat(2, sample1, sample2);
     
     if numel(sample) < m
         sample = cat(2, sample, lipsample(f, L, [a b], m - numel(sample)));
