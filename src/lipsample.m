@@ -2,7 +2,7 @@ function [sample, x, y] = lipsample(f, L, limits, m, varargin)
 % Random variates from a Lipschitz continuous probability density function on [a,b].
 %
 %   s = lipsample(@f, L, [a b], m)
-%       Draws a sample of size _m_ from the probability density _f_ on [_a_, _b_] 
+%       Draws _m_ random variates from the probability density _f_ on [_a_, _b_] 
 %       which is Lipchitz continuous of order _L_. If _f_ is continuously 
 %       differentiable, then the best choice of _L_ is the maximum value 
 %       of its derivative.
@@ -36,7 +36,7 @@ function [sample, x, y] = lipsample(f, L, limits, m, varargin)
 %   % A few exact samples
 %       sample = lipsample(@myfunc, 2*pi, [0 1], 10000);
 %
-%   % Plot a sample of size 10 million based on a low tolerance approximation of _f_.
+%   % Plot 10 million variates based on a low tolerance approximation of _f_.
 %       sample = lipsample(@myfunc, 2*pi, [0 1], 10000000, 'Tolerance', 0.0001);
 %       hold on
 %       pretty_hist(sample, [0 1]);
@@ -86,10 +86,11 @@ function [sample, x, y] = lipsample(f, L, limits, m, varargin)
     y = arrayfun(f, x*(b-a) + a);
     
     % Use the Lipschitz constant to locally adjust the spline.
-    M = abs(atan(n*diff(y)/(b-a)));
-    r = sqrt(((b-a)/n)^2 + diff(y).^2);
     alpha = atan(L);
-    h = ((b-a)*tan(alpha)/n - r.*sin(M))/2;
+    d = diff(y);
+    beta = abs(atan(n*d/(b-a)));
+    r = 0.5*sqrt(((b-a)/n )^2 + d.^2).*sin(pi-alpha-beta)./sin(alpha);
+    h = abs(r.*(L - abs(n*d/(b-a))));
     y(1) = y(1) + h(1);
     y(n+1) = y(n+1) + h(n);
     for i = 2:n
